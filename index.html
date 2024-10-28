@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic-Tac-Toe Game</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+      background-color: black; /* Background hitam */
+      font-family: Arial, sans-serif;
+    }
+
+    #status {
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 2em; /* Ukuran teks lebih besar */
+      font-weight: bold; /* Teks tebal */
+    }
+
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: white;
+      border: 2px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5em;
+      font-weight: bold; /* Huruf O dan X lebih tebal */
+      cursor: pointer;
+      color: white; /* Huruf X dan O menjadi putih */
+      transition: transform 0.3s ease, background-color 0.3s ease; /* Animasi transform dan background */
+    }
+
+    .cell:hover {
+      transform: scale(1.1); /* Animasi ketika kursor berada di atas kotak */
+    }
+
+    .cell-added {
+      animation: pop-in 0.5s ease; /* Animasi muncul */
+    }
+
+    @keyframes pop-in {
+      0% {
+        transform: scale(0.1);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="status" style="color: white;">Di Teken Layarnya Bree</div> <!-- Warna putih untuk player -->
+  <div id="game-board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+
+  <script>
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let currentPlayer = "X";
+    const winConditions = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ];
+
+    const cells = document.querySelectorAll(".cell");
+    const statusText = document.getElementById("status");
+
+    cells.forEach(cell => {
+      cell.addEventListener("click", () => {
+        const index = cell.getAttribute("data-index");
+
+        // Cek jika sel sudah diisi atau giliran O (AI)
+        if (board[index] !== "" || currentPlayer === "O") return;
+
+        // Isi sel dengan simbol pemain X dan ganti background menjadi hijau
+        board[index] = currentPlayer;
+        cell.textContent = currentPlayer;
+        cell.classList.add('cell-added'); // Tambah animasi ke huruf
+        cell.style.fontWeight = "bold"; // Huruf lebih tebal
+        cell.style.backgroundColor = "green"; // Ganti warna jadi hijau untuk player
+
+        // Cek apakah Player X menang
+        if (checkWin()) {
+          statusText.textContent = `Pinter Juga Lu!`;
+          resetGame();
+        } else if (board.every(cell => cell !== "")) {
+          statusText.textContent = "Lawan AI kok seri!";
+          resetGame();
+        } else {
+          // Ganti ke giliran O (AI)
+          currentPlayer = "O";
+          statusText.textContent = `Oke Pinter`;
+          statusText.style.color = 'orange'; // Warna oranye untuk giliran AI
+          setTimeout(() => computerMove(), 500); // AI bergerak setelah delay 500ms
+        }
+      });
+    });
+
+    function checkWin() {
+      return winConditions.some(condition => {
+        return condition.every(index => board[index] === currentPlayer);
+      });
+    }
+
+    // AI memilih langkah yang lebih sulit
+    function computerMove() {
+      let bestMove = findBestMove();
+
+      if (bestMove !== null) {
+        board[bestMove] = currentPlayer;
+        cells[bestMove].textContent = currentPlayer;
+        cells[bestMove].classList.add('cell-added'); // Tambah animasi ke huruf
+        cells[bestMove].style.fontWeight = "bold"; // Huruf lebih tebal
+        cells[bestMove].style.backgroundColor = "red"; // Ganti warna jadi merah terang untuk AI
+
+        // Cek apakah Player O menang
+        if (checkWin()) {
+          statusText.textContent = `Goblok Banget, lawan AI kalah!`;
+          resetGame();
+        } else if (board.every(cell => cell !== "")) {
+          statusText.textContent = "Lawan AI kok seri!";
+          resetGame();
+        } else {
+          // Kembali ke giliran Player X
+          currentPlayer = "X";
+          statusText.textContent = `Giliran Lu`;
+          statusText.style.color = 'white'; // Warna putih untuk giliran player
+        }
+      }
+    }
+
+    // AI mencari langkah terbaik (menyerang atau memblokir player)
+    function findBestMove() {
+      // Cek apakah AI bisa menang
+      for (let i = 0; i < winConditions.length; i++) {
+        const [a, b, c] = winConditions[i];
+        if (board[a] === "O" && board[b] === "O" && board[c] === "") return c;
+        if (board[a] === "O" && board[b] === "" && board[c] === "O") return b;
+        if (board[a] === "" && board[b] === "O" && board[c] === "O") return a;
+      }
+
+      // Cek apakah perlu memblokir player X
+      for (let i = 0; i < winConditions.length; i++) {
+        const [a, b, c] = winConditions[i];
+        if (board[a] === "X" && board[b] === "X" && board[c] === "") return c;
+        if (board[a] === "X" && board[b] === "" && board[c] === "X") return b;
+        if (board[a] === "" && board[b] === "X" && board[c] === "X") return a;
+      }
+
+      // Jika tidak ada langkah untuk menang atau memblokir, pilih langkah acak
+      let availableCells = board.map((val, index) => val === "" ? index : null).filter(val => val !== null);
+      return availableCells[Math.floor(Math.random() * availableCells.length)];
+    }
+
+    function resetGame() {
+      setTimeout(() => {
+        board = ["", "", "", "", "", "", "", "", ""];
+        cells.forEach(cell => {
+          cell.textContent = "";
+          cell.classList.remove('cell-added'); // Hapus animasi untuk reset
+          cell.style.backgroundColor = "white"; // Reset background ke putih
+        });
+        currentPlayer = "X";
+        statusText.textContent = `Giliran Lu`;
+        statusText.style.color = 'white'; // Reset ke putih untuk player
+      }, 2000);
+    }
+  </script>
+
+</body>
+</html>
